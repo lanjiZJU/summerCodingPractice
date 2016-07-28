@@ -1,0 +1,1 @@
+Actually here are some simple js coding implementing some basic visualization design, and all of them are done in 2015, summer.

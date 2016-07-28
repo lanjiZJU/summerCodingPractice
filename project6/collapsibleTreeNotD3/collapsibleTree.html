@@ -1,0 +1,175 @@
+﻿<html>
+<head>
+<meta charset="utf-8"/>
+<title>collapsibleTree</title>
+<script src ="flare2.js"></script>
+<script src ="jquery.js" ></script>
+</head>
+<body>
+
+
+<svg id="svg" width="1500" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+
+<script>
+function createCPTree(params){
+this.flare=params.flare;
+this.svg=params.svg;
+}
+
+createCPTree.prototype={
+	run:function(){
+		var flare=this.flare;
+		var svg=this.svg;
+		var width=svg.getAttribute("width");
+		var height=svg.getAttribute("height");
+		var maxDeep=0;
+		var layout=document.createElementNS('http://www.w3.org/2000/svg', 'g');	
+		var leaf=[];
+		
+		calculateDeep(flare,1);
+		maxDeep++;
+		calculateNum(flare);
+		
+		findLeaf(flare);
+		for(var i=0;i<leaf.length;i++){
+			leaf[i].tag=1;
+		}
+		
+		display();
+		
+		
+		
+		function calculateDeep(object,deep){
+			object.deep=deep;
+			object.collapsing=0;
+			for(var i=0;i<object.children.length;i++){
+				if(object.children[i].children!=undefined)
+					calculateDeep(object.children[i],deep+1);
+				else
+				   object.children[i].deep=deep+1;  
+			}
+			if(maxDeep<object.deep)maxDeep=object.deep;	 
+		}
+		function calculateNum(object){
+			if(object.children==undefined){
+				object.num=1;
+				return object.num;
+			}
+			object.num=0;
+			for(var i=0;i<object.children.length;i++)
+				object.num+=calculateNum(object.children[i]);
+			return object.num;
+		}	
+		
+		function clickOn(x,y,object){
+		    if(object.children!=undefined){
+				if((x-object.x)*(x-object.x)+(y-object.y)*(y-object.y)<16)
+					return object;
+				var result;
+				for(var i=0;i<object.children.length;i++){
+				    result=clickOn(x,y,object.children[i]);
+					if(result!=0)
+					break;
+				}
+				return result;		
+			}
+			return 0;
+		}
+		function findLeaf(object){
+			if(object.children==undefined||object.collapsing==1)
+				leaf.push(object);
+			else
+				for(var i=0;i<object.children.length;i++)
+					findLeaf(object.children[i]);
+		
+		}
+		function calculateY(object){
+			if(object.children==undefined||object.collapsing==1)
+				return object.y;
+			for(var i=0;i<object.children.length;i++)
+			    calculateY(object.children[i]);
+			object.y=(object.children[0].y+object.children[object.children.length-1].y)/2;
+			    return object.y;
+		}
+		function paint(object){
+			object.x=width/maxDeep/2+(object.deep-1)*width/maxDeep;
+			var tempPoint=document.createElementNS('http://www.w3.org/2000/svg', 'circle');		
+			tempPoint.setAttribute('cx',object.x);
+			tempPoint.setAttribute('cy',object.y);
+			tempPoint.setAttribute('r',4); 
+			if(object.tag==undefined)
+				tempPoint.setAttribute("fill", "rgb(0,0,0)"); 
+			else{
+				tempPoint.setAttribute("stroke", "rgb(0,0,0)");
+				tempPoint.setAttribute("stroke-width", "1");
+			    tempPoint.setAttribute("fill", "none"); 
+			}
+			
+			layout.appendChild(tempPoint);
+			
+			var tempText=document.createElementNS('http://www.w3.org/2000/svg', 'text');		
+			tempText.setAttribute('x',object.x+20);
+			tempText.setAttribute('y',object.y+5);
+			tempText.setAttribute('font-size',15);	 
+			tempText.innerHTML=object.name;
+			layout.appendChild(tempText);
+			
+			
+			
+			if(object.children==undefined||object.collapsing==1)return;
+			else 
+				for(var i=0;i<object.children.length;i++){
+				    var x=width/maxDeep/2+(object.children[i].deep-1)*width/maxDeep;
+				    var y=object.children[i].y;
+					
+					var d = "M" + object.x + " " + object.y + " ";
+					d = d + "C" + ((2/3.0)*object.x + (1/3.0)*x) + " " + object.y + " ";
+					d = d + ((1/3.0)*object.x + (2/3.0)*x) + " " + y + " ";
+					d = d + x + " " + y + " ";	
+					
+				    var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+					line.setAttribute("stroke", "#a1a3a6");
+					line.setAttribute("fill", "none");
+					line.setAttribute("d", d);
+
+					layout.appendChild(line);
+					paint(object.children[i]);
+				}
+						
+		}
+		function display(){
+		    layout.innerHTML="";
+		    //calculate y for leaf
+			leaf=[];
+			findLeaf(flare);
+			for(var i=0;i<leaf.length;i++){
+				leaf[i].y=height/(leaf.length+1)*(i+1);
+			}
+			//calculate other y
+			calculateY(flare);
+			//paint
+			paint(flare);
+			svg.appendChild(layout);
+		}
+		$("#svg").mouseup(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   var object=clickOn(pos.x,pos.y,flare);
+		   if(object!=0)object.collapsing=1-object.collapsing;
+		   display();
+		});
+		
+	}
+}
+var params={};
+params.flare=flare;
+params.svg=document.getElementById("svg");
+var collapsibleTree=new createCPTree(params);
+collapsibleTree.run();
+
+</script>
+</body>
+</html>

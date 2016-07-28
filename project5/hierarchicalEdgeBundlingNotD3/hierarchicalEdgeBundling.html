@@ -1,0 +1,335 @@
+﻿<html>
+<head>
+<meta charset="utf-8"/>
+<title>hierarchical Edge Bundling</title>
+<script src ="jquery.js"></script>
+<script src ="data.js"></script>
+<script>
+function createHEB(params){
+this.data=params.data;
+this.svg=params.svg;
+this.beta=params.beta;
+}
+createHEB.prototype={
+    //turn string data to a tree 
+	
+	//getAllPaths(paths[]),all the paths we need to pain can be figure out through the imports of each data[i],
+	//we use paths[] to hold these path, each path[i] is consistent of its node,smeanwhile considering the 
+	//LCA removal
+	
+	//drawSpline(),for each path[i], we build cubic(degree 3) spline curve, 
+    run: function(){
+	
+    //initialize
+	var data=this.data;
+	var svg=this.svg;
+	var beta=this.beta;
+	var depthMax=0;
+	var num=0;
+    for(var i=0;i<data.length;i++){
+	   num++;
+	   data[i].nameList=data[i].name.split(".");
+	   data[i].depth=data[i].nameList.length-1;//depth is calculated from 1
+	   if(depthMax<data[i].depth)depthMax=data[i].depth;
+	   if((i>0)&&data[i].nameList[data[i].depth-1]!=data[i-1].nameList[data[i-1].depth-1])num++;
+	   data[i].num=num;
+	}
+	var dDgree=Math.PI*2/num;
+	var dt=0.008;
+	var radius=400;
+	var layout=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+	//var tempTransform='rotate(-19)';
+	//layout.setAttribute('transform', tempTransform);
+	var tempTransform ='translate(' + svg.getAttribute("width") / 2.0 + ',' + svg.getAttribute("height") / 2.0 + ')'+'rotate(-90)';
+	layout.setAttribute('transform', tempTransform);
+	
+   // var tempTransform='rotate('+-90+')';
+	//layout.setAttribute('transform', tempTransform);
+	var depthList=[];
+	var paths=[];
+	drawLeafNodes();
+	constructdepthList();
+	drawAllNodes();
+	getAllPaths();
+	drawAllSplines();
+	
+	//draw leafNode
+	function drawLeafNodes(){
+	    var text=[];
+		for(var i=0;i<data.length;i++){
+		  text[i]=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+		  var tempTransform='rotate('+data[i].num*dDgree/Math.PI*180+')';
+		  text[i].setAttribute('x',radius);
+		  text[i].setAttribute('y',0);
+		  text[i].setAttribute('transform',tempTransform);
+		  text[i].setAttribute('font-size', 10);	 
+		  text[i].innerHTML="&nbsp;"+data[i].nameList[data[i].depth];	
+		  layout.appendChild(text[i]);	  
+		}
+	    svg.appendChild(layout);
+	};
+	//depthList construction
+	function constructdepthList(){
+	    depthList[depthMax]=data;
+		for (var i=depthMax-1;i>=0;i--){
+		
+		  var totalLength=depthList[i+1][0].name.length;
+		  var lastLength=depthList[i+1][0].nameList[depthList[i+1][0].nameList.length-1].length+1;  
+		  var tempName=depthList[i+1][0].name.substring(0,totalLength-lastLength);
+		  var start=0;
+		  var end=0;
+		  
+		  for(var j=0;j<depthList[i+1].length;j++){
+			   totalLength=depthList[i+1][j].name.length;
+			   lastLength=depthList[i+1][j].nameList[depthList[i+1][j].nameList.length-1].length+1;
+			  
+			   if(tempName!=depthList[i+1][j].name.substring(0,totalLength-lastLength)){
+				   end=j-1;
+				   var tempDepth=depthList[i+1][end].depth-1;
+				   if(depthList[tempDepth]==undefined)depthList[tempDepth]=[];
+				   
+				   for(var k=0;k<depthList[tempDepth].length;k++)
+					 if(depthList[tempDepth][k].name==tempName){
+					  depthList[tempDepth][k].end=depthList[i+1][end].num;
+					  depthList[tempDepth][k].num=(depthList[tempDepth][k].start+depthList[tempDepth][k].end)/2;
+					  break;
+					 }
+				   
+				   if(k==depthList[tempDepth].length){
+				   var node={};
+				   node.depth=tempDepth;
+				   node.start=depthList[i+1][start].num;
+				   node.end=depthList[i+1][end].num;
+				   node.num=(node.start+node.end)/2;
+				   node.name=tempName;
+				   node.nameList=node.name.split(".");
+				   depthList[tempDepth].push(node);
+				   }
+				   tempName=depthList[i+1][j].name.substring(0,totalLength-lastLength);
+				   start=j;
+			   }
+			   if(j==depthList[i+1].length-1){
+				   end=j;
+				   var tempDepth=depthList[i+1][end].depth-1;
+				   if(depthList[tempDepth]==undefined)depthList[tempDepth]=[];
+				   for(var k=0;k<depthList[tempDepth].length;k++)
+					 if(depthList[tempDepth][k].name==tempName) {
+					  depthList[tempDepth][k].end=depthList[i+1][end].num;
+					  depthList[tempDepth][k].num=(depthList[tempDepth][k].start+depthList[tempDepth][k].end)/2;
+					  break;
+					 }
+				   if(k==depthList[tempDepth].length){
+				   var node={};
+				   node.depth=tempDepth;
+				   node.start=depthList[i+1][start].num;
+				   node.end=depthList[i+1][end].num;
+				   node.num=(node.start+node.end)/2;
+				   node.name=tempName;
+				   node.nameList=node.name.split(".");
+				   depthList[tempDepth].push(node);
+				   }
+				   tempName=depthList[i+1][j].name.substring(0,totalLength-lastLength);
+				   start=j;
+			   }
+				
+		  }
+		}
+		
+	};
+	//for( var i = depthMax; i >= 0; i-- )
+    //    for( var j = 0; j < depthList[i].length; j++ )
+    //	   console.log(i, depthList[i][j].name);
+	
+	//draw all nodes
+	function drawAllNodes(){
+		var text=[];
+		for (var i=0;i<depthMax;i++){
+		   text[i]=[];
+		   for (var j=0;j<depthList[i].length;j++)
+		   {
+			text[i][j]=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			var tempTransform='rotate('+depthList[i][j].num*dDgree/Math.PI*180+')';
+			text[i][j].setAttribute('x',100*i);
+			text[i][j].setAttribute('y',0);
+			text[i][j].setAttribute('transform',tempTransform);
+			text[i][j].setAttribute('font-size', 10);	 
+			text[i][j].innerHTML="&nbsp;"+depthList[i][j].nameList[depthList[i][j].depth];	
+			layout.appendChild(text[i][j]);	
+		   }
+		}
+		svg.appendChild(layout);
+	};  
+    function getdepthListNodeByName(name){
+	for (var i=0;i<=depthMax;i++)
+	   for (var j=0;j<depthList[i].length;j++)
+	   if(depthList[i][j].name==name)return depthList[i][j];
+	};	
+	function drawAllSplines(){
+		for(var i=0;i<paths.length;i++)
+		{
+			drawSpline(paths[i]);
+		}
+      		
+	};
+	function drawSpline(path){
+		points=[];
+		for(var i=1;i<path.length-1;i++)
+		{
+			points[i]={};
+			points[i].x=100*path[i].depth*Math.cos(path[i].num*dDgree);
+			points[i].y=100*path[i].depth*Math.sin(path[i].num*dDgree);
+		}
+		    points[0]={};
+			points[0].x=100*depthMax*Math.cos(path[0].num*dDgree);
+			points[0].y=100*depthMax*Math.sin(path[0].num*dDgree);
+		    
+			points[path.length-1]={};
+			points[path.length-1].x=100*depthMax*Math.cos(path[path.length-1].num*dDgree);
+			points[path.length-1].y=100*depthMax*Math.sin(path[path.length-1].num*dDgree);
+		//alter by beta
+		for(var i=0;i<points.length;i++)
+		{
+			points[i].x=beta*points[i].x+(1-beta)*(points[0].x+i/(points.length-1)*(points[points.length-1].x-points[0].x));
+			points[i].y=beta*points[i].y+(1-beta)*(points[0].y+i/(points.length-1)*(points[points.length-1].y-points[0].y));
+		}
+		// Cox-deBoor
+		var N = function(i, k, t, u)
+		{
+		    
+			if( k == 0 )
+			{
+				if( ( u[i] <= t ) && ( t <= u[i+1] ) ) return 1.0;
+				else return 0.0;
+			}
+			else
+			{
+				
+				var len1 = (u[i+k]-u[i]);
+				var len2 = (u[i+k+1]-u[i+1]);
+
+				if( len1 == 0 ) len1 = 1;
+				if( len2 == 0 ) len2 = 1;
+
+				var c1 = 1.0*(t-u[i])/len1;
+				var c2 = 1.0*(u[i+k+1]-t)/len2;
+
+				return c1*N(i,k-1,t,u) + c2*N(i+1,k-1,t,u); 
+			}
+		}
+		var k = 2;
+		var n = points.length - 1;
+		//if(n==3)k=1;
+		//if(n==2)k=0;
+		// generate node vector 
+		var u = [];
+		for( var j = 0; j<=k; j++ )
+			u[j] = 0;
+		for( ; j <= n; j++ )
+			u[j] = (j-k)*1.0/(n-k+1);
+		for( ; j <= n+k+1; j++ )
+			u[j] = 1.0;
+			
+		var line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+		line.setAttribute("fill", "none");
+		line.setAttribute("stroke", "#2a5caa");
+		line.setAttribute("stroke-width", "0.5");
+
+		//points = " "+points[0].x +","+points[0].y+" ";
+		var stringPoints = "";
+		for( var t = 0; t <= 1; t = t + dt)
+		{
+
+			var x=0,y=0;
+			
+			for( var i = 0; i <= n; i++ )
+			{
+				x = x + points[i].x * N(i, k, t, u);
+				y = y + points[i].y * N(i, k, t, u);
+			}
+
+			stringPoints = stringPoints + x + "," + y + " ";
+		}
+		line.setAttribute("points", stringPoints);stringPoints="";
+		layout.appendChild(line);
+		svg.appendChild(layout);
+	};
+	function getAllPaths(){
+	   for(var i=0;i<data.length;i++){
+	    for(var j=0;j<data[i].imports.length;j++)
+		   for(var k=0;k<data.length;k++)
+		      if(data[k].name==data[i].imports[j]){
+			     var path=getPath(i,k);
+				 paths.push(path);
+			  }
+	   }
+	};
+	function getPath(start,end){
+	     var path=[];
+	     var lessdepth= data[start].depth < data[end].depth ? data[start].depth : data[end].depth;
+	     for(var i=0;i<=lessdepth;i++){
+	      if(data[start].nameList[i]!=data[end].nameList[i]){i--;break;}//now data[start].nameList[i] is LCA
+	     }
+	     for(var j=data[start].depth;j>i;j--){
+		    var tempName="";
+	        for(var k=0;k<=j;k++)
+		    {
+	  	    tempName+=data[start].nameList[k];
+		  	if(k<j)tempName+=".";
+		    }
+			var node=getdepthListNodeByName(tempName);
+		    path.push(node);
+		 }
+		 var tempName="";
+	     if(data[start].depth-i+data[end].depth-i<=2){
+		    for(var k=0;k<=i;k++)
+		    {
+	  	    tempName+=data[start].nameList[k];
+		  	if(k<i)tempName+=".";
+		    }
+			var node=getdepthListNodeByName(tempName);
+		    path.push(node);
+		 }
+		 for(var j=i+1;j<=data[end].depth;j++)
+		 {
+		    var tempName="";
+	        for(var k=0;k<=j;k++)
+		    {
+	  	    tempName+=data[end].nameList[k];
+		  	if(k<j)tempName+=".";
+		    }
+		    var node=getdepthListNodeByName(tempName);
+		    path.push(node);
+		 }
+		 return path;
+	};
+	
+	
+	
+	}
+	
+}
+</script>
+</head>
+<body>
+<svg id="svg" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+<p style="position:absolute;bottom:480;right:170;font-size:18px" >beta:
+</p>
+<input id="beta" style="position:absolute;bottom:500;right:0;" type="range" min="0" max="100" value="85">
+</input>
+<script>
+var params={};
+params.data=flare;
+params.svg=document.getElementById("svg");
+params.beta=document.getElementById("beta").value/100;
+var HEB=new createHEB(params);
+HEB.run();
+$("#beta").mouseup(function(){
+svg.innerHTML="";
+params.beta=document.getElementById("beta").value/100;
+var HEB=new createHEB(params);
+HEB.run();
+})
+</script>
+</body>
+</html>

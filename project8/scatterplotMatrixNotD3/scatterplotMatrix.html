@@ -1,0 +1,202 @@
+﻿<html>
+<head>
+<title>scatterplotMatrix</title>
+<script src="data.js"></script>
+<script src="jquery.js" ></script>
+</head>
+<body>
+
+<svg id="svg" width="1500" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+<script>
+
+
+function createScatterplot(params){
+this.data=params.data;
+this.svg=params.svg;
+this.nAttri=params.nAttri;
+this.scale=params.scale;
+};
+createScatterplot.prototype={
+	run:function(){
+		var data=this.data;
+		var svg=this.svg;
+		var nAttri=this.nAttri;
+		var scale=this.scale;
+		var bounds=[];
+		var points=document.createElementNS('http://www.w3.org/2000/svg','g');
+		var selectRect={};var rect={};dataTag=[];
+		//calculate bounds
+		for(var i=0;i<scale.length;i++){
+			bounds[i]={};
+			bounds[i].bottom=10;
+			bounds[i].top=0;
+			for(var j=0;j<data.length;j++){
+				if(data[j][i+1]>bounds[i].top)
+				 bounds[i].top=data[j][i+1];
+				if(data[j][i+1]<bounds[i].bottom)
+				 bounds[i].bottom=data[j][i+1];
+			}
+			scale[i][0]=bounds[i].bottom;
+			scale[i][scale[i].length-1]=bounds[i].top;
+		}
+		for(var i=0;i<data.length;i++){
+			dataTag[i]=1;
+		}
+		paintRectFrame();
+		paintPoints();
+		
+			
+		//paint the rect frame
+		function paintRectFrame(){
+			for(var i=0;i<nAttri;i++)
+			  for(var j=0;j<nAttri;j++){
+					var tempRect=document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					tempRect.setAttribute('x',300+i*210);
+					tempRect.setAttribute('y',100+j*210);
+					tempRect.setAttribute('width',200);
+					tempRect.setAttribute('height',200);
+					tempRect.setAttribute('stroke',"rgb(195,195,195)");
+					tempRect.setAttribute('fill',"none");
+					svg.appendChild(tempRect);
+				}
+			var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText1.setAttribute('x',300);
+				tempText1.setAttribute('y',115);
+				tempText1.setAttribute('font-size',20);	 
+				tempText1.innerHTML="sepal length";
+				svg.appendChild(tempText1);
+			var tempText2=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText2.setAttribute('x',300+1*210);
+				tempText2.setAttribute('y',115+1*210);
+				tempText2.setAttribute('font-size',20);	 
+				tempText2.innerHTML="sepal width";
+				svg.appendChild(tempText2);
+			var tempText3=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText3.setAttribute('x',300+2*210);
+				tempText3.setAttribute('y',115+2*210);
+				tempText3.setAttribute('font-size',20);	 
+				tempText3.innerHTML="petal length";
+				svg.appendChild(tempText3);
+			var tempText4=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText4.setAttribute('x',300+3*210);
+				tempText4.setAttribute('y',115+3*210);
+				tempText4.setAttribute('font-size',20);	 
+				tempText4.innerHTML="petal width";
+				svg.appendChild(tempText4);
+			for(var i=0;i<scale.length;i++)	
+				for(var j=0;j<scale[i].length-1;j++){
+					var tempText=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					tempText.setAttribute('x',300+i*210+j*200/(scale[i].length-1)-15);
+					tempText.setAttribute('y',950);
+					tempText.setAttribute('font-size',20);	 
+					tempText.innerHTML=scale[i][j].toFixed(1);
+					svg.appendChild(tempText);
+				}
+				
+			for(var i=0;i<scale.length;i++)	
+				for(var j=0;j<scale[i].length-1;j++){
+					var tempText=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					tempText.setAttribute('x',1130);
+					tempText.setAttribute('y',100+i*210+(scale[i].length-1-j)*200/(scale[i].length-1)+5);
+					tempText.setAttribute('font-size',20);	 
+					tempText.innerHTML=scale[i][j].toFixed(1);
+					svg.appendChild(tempText);
+				}
+		};
+		function paintPoints(){
+		    points.innerHTML="";
+		    var tempRect=document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					tempRect.setAttribute('x',rect.x);
+					tempRect.setAttribute('y',rect.y);
+					tempRect.setAttribute('width', rect.height);
+					tempRect.setAttribute('height',rect.width);
+					tempRect.setAttribute('stroke',"rgb(195,195,195)");
+					tempRect.setAttribute('fill',"none");
+					points.appendChild(tempRect);
+			for(var i=0;i<nAttri;i++)
+			  for(var j=0;j<nAttri;j++)
+				for(var k=0;k<data.length;k++){
+				
+					var tempPoint=document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+					
+					tempPoint.setAttribute('cx',300+(data[k][i+1]-scale[i][0])/
+					(scale[i][scale[i].length-1]-scale[i][0])*200+i*210);
+					tempPoint.setAttribute('cy',100+200-(data[k][j+1]-scale[j][0])/
+					(scale[j][scale[j].length-1]-scale[j][0])*200+j*210);
+					tempPoint.setAttribute('r',4); 
+					
+					var tempColor="";
+					if(data[k][0]=="setosa")
+					tempColor="#CD5C5C";
+					else if(data[k][0]=='versicolor')
+					tempColor="#00CD66";
+					else tempColor="#009ACD";
+					if(dataTag[k]!=1) tempColor="#DBDBDB";
+					tempPoint.setAttribute("fill", tempColor); 
+					
+					points.appendChild(tempPoint);
+			    }
+			svg.appendChild(points);
+		};
+		
+		$("#svg").mousedown(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   
+		   for(var i=0;i<nAttri;i++)
+			  for(var j=0;j<nAttri;j++)
+					if(pos.x>300+i*210&&pos.x<300+i*210+200&&pos.y>100+j*210&&pos.y<100+j*210+200)
+					{selectRect.i=i; selectRect.j=j;break;}
+		   selectRect.x=pos.x;
+		   selectRect.y=pos.y;
+		   
+		   
+		});
+		$("#svg").mouseup(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   if(pos.x<300+selectRect.i*210)pos.x=300+selectRect.i*210;
+		   if(pos.x>300+selectRect.i*210+200)pos.x=300+selectRect.i*210+200;
+		   if(pos.y<100+selectRect.j*210)pos.y=100+selectRect.j*210;
+		   if(pos.y>100+selectRect.j*210+200)pos.y=100+selectRect.j*210+200;
+		   
+		   rect.x=pos.x<selectRect.x?pos.x:selectRect.x;
+		   rect.y=pos.y<selectRect.y?pos.y:selectRect.y;
+		   rect.height=Math.abs(pos.y-selectRect.y);
+		   rect.width=Math.abs(pos.x-selectRect.x);
+		   
+		   var i=selectRect.i;var j=selectRect.j;
+		   var x=0,y=0;
+		   for(var k=0;k<data.length;k++){
+				x=300+(data[k][i+1]-scale[i][0])/(scale[i][scale[i].length-1]-scale[i][0])*200+i*210;
+				y=100+200-(data[k][j+1]-scale[j][0])/(scale[j][scale[j].length-1]-scale[j][0])*200+j*210;
+				if(x>rect.x&&x<rect.x+rect.width&&y>rect.y&&y<rect.y+rect.height)
+				dataTag[k]=1;
+				else
+				dataTag[k]=0;
+		   }
+		   paintPoints();
+					
+				
+		});
+		
+	}
+
+}
+
+var params={};
+params.data=data;
+params.svg=document.getElementById("svg");
+params.nAttri=4;
+params.scale=[[4,5,6,7,8],[2.0,2.5,3.0,3.5,4.0,4.5],[1,2,3,4,5,6],[0,0.5,1.0,1.5,2.0,2.5]];
+var scatterplotMatrix=new createScatterplot(params);
+scatterplotMatrix.run();
+</script>
+
+</body>
+</html>

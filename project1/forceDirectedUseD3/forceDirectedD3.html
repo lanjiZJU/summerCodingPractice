@@ -1,0 +1,79 @@
+﻿<html>
+<head>
+<title>forceDirectedD3</title>
+<style>
+.node{
+stroke: #dfa;
+stroke-width: 1.5px;
+}
+.link{
+stroke: #999;
+stroke-opacity: .6;
+}
+</style>
+<script src="d3.js"></script>
+<script src="miserables.js" ></script>
+</head>
+
+<body>
+<script>
+
+var width=1000;
+var height=500;
+var color=d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-120)
+    .linkDistance(30)
+    .size([width, height]);
+	force
+	.nodes(graph.nodes)	
+	.links(graph.links);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+	
+var link=svg.selectAll(".link")
+         .data(graph.links).enter().append("line")
+         .attr("class","link")
+         .style("stroke-width",function(d){return Math.sqrt(d.value);});		 
+		
+var node=svg.selectAll(".node")
+         .data(graph.nodes).enter().append("circle")
+		 .attr("class","node")
+		 .attr("r",5)
+		 .style("fill",function(d){return color(d.group);});
+		 //svg.style()默认的实参是svg.data
+  
+force.start();//开启或恢复结点间的位置影响
+force.on("tick",function(){
+	link.attr("x1", function(d) { return d.source.x; })
+	    .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+
+})
+node.call(force.drag);
+//tick表示当运动进行中每更新一帧时。这是力学图中最常使用的事件，用于设定力学图每一帧是如何更新的。除此之外，还有一些其他常用的事件,
+//力学图运动开始时  
+//force.on("start", function(){  
+//   console.log("开始");  
+//});  
+  
+//力学图运动结束时  
+//force.on("end", function(){  
+//    console.log("结束");  
+//});  
+  
+//力学图每一帧  
+//force.on("tick", function(){  
+//    console.log("进行中");  
+//});  
+</script>
+</body>
+
+</html>

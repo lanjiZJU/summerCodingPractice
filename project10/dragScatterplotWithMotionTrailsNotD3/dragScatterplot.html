@@ -1,0 +1,304 @@
+﻿<html>
+<head>
+<title>dragScatterplot</title>
+<script src="nations.js"></script>
+<script src="jquery.js" ></script>
+</head>
+<body>
+
+<svg id="svg" width="1800" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+<input id="time" style="width:1000;position:absolute;bottom:50;left:100;" type="range" min="1800" max="2009" value="1800">
+</input>
+<script>
+function createdragSWM(params){
+this.data=params.data;
+this.svg=params.svg;
+this.time=document.getElementById("time").value;
+};
+createdragSWM.prototype={
+	run:function(){
+	    var data=this.data;
+	    var svg=this.svg;
+		var time =this.time;
+		var layout=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		var newData=[];
+		var timeLines=[];
+		
+		var axisBottom=50,axisTop=svg.getAttribute("height")-100;
+		var axisLeft=100,axisRight=svg.getAttribute("width")-100;
+		var axisWidth=axisRight-axisLeft;
+			
+		var axisLeft1=axisLeft;
+		var axisRight1=axisLeft1+2/8*axisWidth;
+		
+		var axisLeft2=axisLeft+1*axisWidth*3/8;
+		var axisRight2=axisLeft2+2/8*axisWidth;
+		
+		var axisLeft3=axisLeft+2*axisWidth*3/8;
+		var axisRight3=axisLeft3+2/8*axisWidth;
+		
+		var mouseDown=0;
+		paintAxis();
+		alterData();
+		
+		Display();
+		
+		function paintAxis(){
+		    
+			//vertical axis
+			var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+			tempAxis.setAttribute("x1",axisLeft);  
+			tempAxis.setAttribute("y1",axisBottom);  
+			tempAxis.setAttribute("x2",axisLeft);  
+			tempAxis.setAttribute("y2",axisTop);  
+			tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+			tempAxis.setAttribute("stroke-width", "2");  
+			svg.appendChild(tempAxis); 
+			for(var i=0;i<9;i++){
+				var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				tempAxis.setAttribute("x1",axisLeft);  
+				tempAxis.setAttribute("y1",(1-i/8)*(axisTop-axisBottom)+axisBottom);  
+				tempAxis.setAttribute("x2",axisLeft-15);  
+				tempAxis.setAttribute("y2",(1-i/8)*(axisTop-axisBottom)+axisBottom);  
+				tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+				tempAxis.setAttribute("stroke-width", "2");  
+				svg.appendChild(tempAxis);
+				
+				var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText1.setAttribute('x',axisLeft-35);
+				tempText1.setAttribute('y',(1-i/8)*(axisTop-axisBottom)+axisBottom+5);
+				tempText1.setAttribute('font-size',15);	
+				tempText1.innerHTML=(i+1)*10;
+				svg.appendChild(tempText1);
+			}
+			//horizontal axis
+            var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+			tempAxis.setAttribute("x1",axisLeft);  
+			tempAxis.setAttribute("y1",axisTop);  
+			tempAxis.setAttribute("x2",axisRight);  
+			tempAxis.setAttribute("y2",axisTop);  
+			tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+			tempAxis.setAttribute("stroke-width", "2");  
+			svg.appendChild(tempAxis); 
+			
+			for(var i=0;i<9;i++){
+				var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				tempAxis.setAttribute("x1",axisLeft1+i*(axisRight1-axisLeft1)/8);  
+				tempAxis.setAttribute("y1",axisTop);  
+				tempAxis.setAttribute("x2",axisLeft1+i*(axisRight1-axisLeft1)/8);  
+				tempAxis.setAttribute("y2",axisTop+15);  
+				tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+				tempAxis.setAttribute("stroke-width", "2");  
+				svg.appendChild(tempAxis);
+				
+				var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText1.setAttribute('x',axisLeft1+i*(axisRight1-axisLeft1)/8-10);
+				tempText1.setAttribute('y',axisTop+25);
+				tempText1.setAttribute('font-size',15);	
+				if(i==0||i==8)
+				tempText1.innerHTML=(i+2)*100;
+				else
+				tempText1.innerHTML="";
+				svg.appendChild(tempText1);
+			}
+			for(var i=0;i<9;i++){
+				var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				tempAxis.setAttribute("x1",axisLeft2+i*(axisRight2-axisLeft2)/8);  
+				tempAxis.setAttribute("y1",axisTop);  
+				tempAxis.setAttribute("x2",axisLeft2+i*(axisRight2-axisLeft2)/8);  
+				tempAxis.setAttribute("y2",axisTop+15);  
+				tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+				tempAxis.setAttribute("stroke-width", "2");  
+				svg.appendChild(tempAxis);
+				
+				var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText1.setAttribute('x',axisLeft2+i*(axisRight2-axisLeft2)/8-10);
+				tempText1.setAttribute('y',axisTop+25);
+				tempText1.setAttribute('font-size',15);	
+				if(i==0||i==8)
+				tempText1.innerHTML=(i+2)*1000;
+				else
+				tempText1.innerHTML="";
+				svg.appendChild(tempText1);
+			}
+			for(var i=0;i<9;i++){
+				var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				tempAxis.setAttribute("x1",axisLeft3+i*(axisRight3-axisLeft3)/8);  
+				tempAxis.setAttribute("y1",axisTop);  
+				tempAxis.setAttribute("x2",axisLeft3+i*(axisRight3-axisLeft3)/8);  
+				tempAxis.setAttribute("y2",axisTop+15);  
+				tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+				tempAxis.setAttribute("stroke-width", "2");  
+				svg.appendChild(tempAxis);
+				
+				var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText1.setAttribute('x',axisLeft3+i*(axisRight3-axisLeft3)/8-10);
+				tempText1.setAttribute('y',axisTop+25);
+				tempText1.setAttribute('font-size',15);	
+				if(i==0||i==8)
+				tempText1.innerHTML=(i+2)*10000;
+				else
+				tempText1.innerHTML="";
+				svg.appendChild(tempText1);
+			}
+		};	
+		function alterData(){
+			for(var i=0;i<data.length;i++){
+			    timeLines[i]={};
+			    newData[i]=[];
+				for(var j=0;j<=209;j++)
+					newData[i][j]={};
+			    
+				var k=1800;
+				for(var j=0;j<data[i].income.length;j++){
+					var start=k;
+					while(k<data[i].income[j][0])k++;
+					if(j==0)
+						for(var d=start;d<=k;d++)
+							newData[i][d-1800].income=data[i].income[j][1];
+					else
+						for(var d=start;d<=k;d++){
+							newData[i][d-1800].income=data[i].income[j-1][1]+(d-start)/(k-start)*(data[i].income[j][1]-data[i].income[j-1][1]);
+							if(newData[i][d-1800].income<0)
+							d=d+d-d;
+					    }
+					if(j==data[i].income.length-1)
+					    for(var a=k;a<=2009;a++)
+							newData[i][a-1800].income=data[i].income[j][1];
+				}
+                k=1800;				
+                for(var j=0;j<data[i].lifeExpectancy.length;j++){
+					var start=k;
+					while(k<data[i].lifeExpectancy[j][0])k++;
+					if(j==0)
+						for(var d=start;d<=k;d++)
+							newData[i][d-1800].lifeExpectancy=data[i].lifeExpectancy[j][1];
+					else
+						for(var d=start;d<=k;d++)
+							newData[i][d-1800].lifeExpectancy=data[i].lifeExpectancy[j-1][1]+(d-start)/(k-start)*(data[i].lifeExpectancy[j][1]-data[i].lifeExpectancy[j-1][1]);
+					if(j==data[i].lifeExpectancy.length-1)
+					    for(var a=k;a<=2009;a++)
+							newData[i][a-1800].lifeExpectancy=data[i].lifeExpectancy[j][1];
+				} 
+				k=1800;
+                for(var j=0;j<data[i].population.length;j++){
+					var start=k;
+					while(k<data[i].population[j][0])k++;
+					if(j==0)
+						for(var d=start;d<=k;d++)
+							newData[i][d-1800].population=data[i].population[j][1];
+					else
+						for(var d=start;d<=k;d++)
+							newData[i][d-1800].population=data[i].population[j-1][1]+(d-start)/(k-start)*(data[i].population[j][1]-data[i].population[j-1][1]);
+					if(j==data[i].population.length-1)
+					    for(var a=k;a<=2009;a++)
+							newData[i][a-1800].population=data[i].population[j][1];
+				} 				
+					
+				
+				
+			}
+			for(var t=1800;t<=2009;t++){
+				for(var i=0;i<newData.length;i++){
+					var tempX=newData[i][t-1800].income;
+					var tempY=newData[i][t-1800].lifeExpectancy;
+					var tempR=newData[i][t-1800].population;
+					var x=0,y=0,r=0;
+					newData[i][t-1800].y=axisTop-(tempY-10)/(80)*(axisTop-axisBottom);
+					
+					if(tempX>200&&tempX<1000)
+					newData[i][t-1800].x=(tempX-200)/(800)*(axisRight1-axisLeft1)+axisLeft1;
+					
+					else if(tempX>1000&&tempX<2000)
+					newData[i][t-1800].x=(tempX-1000)/(1000)*(axisLeft2-axisRight1)+axisRight1;
+					
+					else if(tempX>2000&&tempX<10000)
+					newData[i][t-1800].x=(tempX-2000)/(8000)*(axisRight2-axisLeft2)+axisLeft2;
+					
+					else if(tempX>10000&&tempX<20000)
+					newData[i][t-1800].x=(tempX-10000)/(10000)*(axisLeft3-axisRight2)+axisRight2;
+					
+					else if(tempX>20000&&tempX<100000)
+					newData[i][t-1800].x=(tempX-20000)/(80000)*(axisRight3-axisLeft3)+axisLeft3;
+					
+					newData[i][t-1800].r=Math.sqrt(tempR)/800;
+				}
+			}
+		};	
+        function Display(){
+		    layout.innerHTML="";
+		    time=document.getElementById("time").value;
+			for(var i=0;i<newData.length;i++){
+				var tempPoint=document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+				tempPoint.setAttribute('cx',newData[i][time-1800].x);
+				tempPoint.setAttribute('cy',newData[i][time-1800].y);
+				tempPoint.setAttribute('r',newData[i][time-1800].r); 
+				tempPoint.setAttribute("fill", "rgb("+i%256+","+(i*i)%256+","+(i*i*i)%256+")"); 
+				tempPoint.setAttribute("stroke", "#000000");  
+				tempPoint.setAttribute("stroke-width", "2"); 
+				layout.appendChild(tempPoint);
+			}
+			
+			//time		
+			var tempText=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			tempText.setAttribute('x',1100);
+			tempText.setAttribute('y',850);
+			tempText.setAttribute('font-size',250);
+			tempText.setAttribute("fill","#9AFF9A");
+			tempText.innerHTML=time;
+			layout.appendChild(tempText);
+			svg.appendChild(layout);
+			
+		};	
+		function paintLine(x,y){
+			for(var i=0;i<newData.length;i++){
+				if((x-newData[i][time-1800].x)*(x-newData[i][time-1800].x)+(y-newData[i][time-1800].y)*(y-newData[i][time-1800].y)<newData[i][time-1800].r*newData[i][time-1800].r)
+				break;
+			}
+			if(i==newData.length)return;
+			var line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+			line.setAttribute("fill", "none");
+			line.setAttribute("stroke", "#000000");
+			line.setAttribute("stroke-width", "1");
+
+			var stringPoints = "";
+			for( var t = 1800; t <= 2009; t++)
+				stringPoints = stringPoints + newData[i][t-1800].x + "," + newData[i][t-1800].y + " ";
+			line.setAttribute("points", stringPoints);stringPoints="";
+			svg.appendChild(line);
+		}
+		
+		
+		$("#svg").mousedown(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   paintLine(pos.x,pos.y);
+		});
+		$("#time").mousemove(function(){
+        if(mouseDown==1)
+		Display();
+        });
+		$("#time").mousedown(function(){
+		mouseDown=1;
+        });	
+		$("#time").mouseup(function(){
+        mouseDown=0;
+        });	
+		
+	}
+}
+
+var params={};
+params.data=nations;
+params.svg=document.getElementById("svg");
+
+var dragSWM=new createdragSWM(params);
+dragSWM.run();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,157 @@
+﻿<html>
+<head>
+<meta charset="utf-8"/>
+<title>TreeMap</title>
+<script src ="flare2.js"></script>
+</head>
+<body>
+
+
+<svg id="svg" width="1500" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+
+<script>
+function createTreeMap(){
+this.flare=params.flare;
+this.svg=params.svg;
+}
+
+createTreeMap.prototype={
+	run:function(){
+		var flare=this.flare;
+		var svg=this.svg;
+		var rect={};
+		rect.x=0;rect.y=0;
+		rect.width=svg.getAttribute("width");
+		rect.height=svg.getAttribute("height");
+		color="rgb(32,234,88)";
+		
+		var totalSize=calculateSize(flare);
+		var ratio=rect.width*rect.height/totalSize;
+		resize(flare);
+		map(flare,rect);
+		function calculateSize(object){
+			if(object.children==undefined)
+			return object.size;
+			object.size=0;
+			for(var i=0;i<object.children.length;i++)
+				object.size+=calculateSize(object.children[i]);
+			return object.size;
+		}
+		function resize(object){
+		    object.size=object.size*ratio;
+			if(object.children==undefined)
+				return;
+			   
+			for(var i=0;i<object.children.length;i++)
+				resize(object.children[i]);
+			
+		}
+		function map(object,rect){
+			if(object.children==undefined){
+				var tempRect=document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+				tempRect.setAttribute('x',rect.x+0.5);
+				tempRect.setAttribute('y',rect.y+0.5);
+				tempRect.setAttribute('width', rect.width-1);
+				tempRect.setAttribute('height',rect.height-1);
+				//tempRect.setAttribute('stroke',"rgb(0,0,0)");
+				tempRect.setAttribute('fill',color);
+				svg.appendChild(tempRect);
+				
+				var tempText=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				tempText.setAttribute('x',rect.x);
+				tempText.setAttribute('y',rect.y+15);
+				tempText.setAttribute('font-size',10);	 
+				tempText.innerHTML=object.name;
+				svg.appendChild(tempText);
+			}
+			else{
+			    if(object.children[0].children==undefined)
+				color="rgb("+Math.round(256*Math.random())+","+Math.round(256*Math.random())+","+Math.round(256*Math.random())+")";
+				object.children.sort( function(a, b){ return a.size < b.size ? 1 : -1 } );
+				var i=0;
+				while(i<object.children.length){
+				    var sum=object.children[i].size;
+					var swap=0;
+					if(rect.height<=rect.width)
+						short=rect.height;
+					else{
+						swap=1;
+						short=rect.width;
+					}
+					var tempI=i;var a=0;
+					var oldratio=1;var newratio=0;  
+					while(oldratio>newratio&&i<object.children.length){
+					    if(i==object.children.length-1){a=1;break;}
+						i++;
+						sum+=object.children[i].size
+						newratio=(sum/short)/(object.children[i].size/(sum/short));
+						oldratio=(object.children[i-1].size/((sum-object.children[i].size)/short))/
+						((sum-object.children[i].size)/short);
+					}
+					//deal with object.children.length-1
+					if(i<object.children.length-1||a==0)
+					sum=sum-object.children[i].size;
+					else
+				    i++;
+					
+					if(swap==0){
+						var width=sum/short;
+						var height=0;
+						var tempRect={};
+						tempRect.x=rect.x;tempRect.y=rect.y;
+						tempRect.width=rect.width;tempRect.height=rect.height;
+						for(var j=tempI;j<i;j++){
+							tempRect.x=rect.x;
+							tempRect.y=rect.y+height;
+							tempRect.width=width;
+							tempRect.height=object.children[j].size/width;
+							var tempColor=color;
+							map(object.children[j],tempRect);
+							color=tempColor;
+							height+=object.children[j].size/width;
+						}
+						rect.x=rect.x+width;
+						rect.y=rect.y;
+						rect.width=rect.width-width;
+						rect.height=rect.height;
+						
+					}
+					else{
+						var height=sum/short;
+						var width=0;
+						var tempRect={};
+						tempRect.x=rect.x;tempRect.y=rect.y;
+						tempRect.width=rect.width;tempRect.height=rect.height;
+						for(var j=tempI;j<i;j++){
+							tempRect.x=rect.x+width;
+							tempRect.y=rect.y;
+							tempRect.width=object.children[j].size/height;
+							tempRect.height=height;
+							var tempColor=color;
+							map(object.children[j],tempRect);
+							color=tempColor;
+							width+=object.children[j].size/height;
+						}
+						rect.x=rect.x;
+						rect.y=rect.y+height;
+						rect.width=rect.width;
+						rect.height=rect.height-height;
+					}
+				}
+				
+				
+			}
+				
+		}
+	}
+}
+var params={};
+params.flare=flare;
+params.svg=document.getElementById("svg");
+var treeMap=new createTreeMap(params);
+treeMap.run();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+﻿<html>
+<head>
+<title>parallelCoordinates</title>
+<script src="cars.js"></script>
+<script src="jquery.js" ></script>
+</head>
+<body>
+
+<svg id="svg" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+<script>
+function createParallel(params){
+this.data=params.data;
+this.columns=params.columns;
+this.svg=params.svg;
+this.boundsInitial=params.boundsInitial;
+};
+createParallel.prototype={
+
+	run: function(){
+		var data=this.data;
+		var columns=this.columns;
+		var svg=this.svg;
+		var width=svg.getAttribute("width");
+		var height=svg.getAttribute("height");
+		var allLines=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		var maxs=["9","456 sq in","5141 lbs","231 hp","26 sec","48 mpg","83"];
+		var mins=["3","68 sq in","1613 lbs","46 hp","8 sec","9 mpg","70"];
+		var lines=[];
+		var boundsInitial=this.boundsInitial;
+		var bounds=[];
+		//paint the text
+		for(var i=0;i<columns.length;i++){
+			var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			tempText1.setAttribute('x',(i+1)*width/8);
+			tempText1.setAttribute('y',30);
+			tempText1.setAttribute('font-size',15);	 
+			tempText1.innerHTML=columns[i];
+			svg.appendChild(tempText1);
+			var tempText2=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			tempText2.setAttribute('x',(i+1)*width/8);
+			tempText2.setAttribute('y',45);
+			tempText2.setAttribute('font-size',10);	 
+			tempText2.innerHTML=maxs[i];
+			svg.appendChild(tempText2);
+			var tempText3=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			tempText3.setAttribute('x',(i+1)*width/8);
+			tempText3.setAttribute('y',560);
+			tempText3.setAttribute('font-size',10);	 
+			tempText3.innerHTML=mins[i];
+			svg.appendChild(tempText3);
+			
+		}
+		//paint the cylinders and axis
+		for(var i=0;i<columns.length;i++){
+			var tempRect=document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+			tempRect.setAttribute('x',(i+1)*width/8);
+			tempRect.setAttribute('y',50);
+			tempRect.setAttribute('width',10);
+			tempRect.setAttribute('height',500);
+			tempRect.setAttribute('fill',"#d4d4d4")
+			//tempRect.setAttribute('stroke',"rgb(212,212,212)");
+			svg.appendChild(tempRect);
+		}
+		/*
+		for(var i=0;i<columns.length;i++){  
+			var tempAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+			tempAxis.setAttribute("x1",(i+1)*width/8+5);  
+			tempAxis.setAttribute("y1",50);  
+			tempAxis.setAttribute("x2",(i+1)*width/8+5);  
+			tempAxis.setAttribute("y2",550);  
+			tempAxis.setAttribute("stroke", "rgb(0,0,0)");  
+			tempAxis.setAttribute("stroke-width", "2");  
+			svg.appendChild(tempAxis);  
+        }  
+		*/
+		//build lines array
+		for(var i=0;i<data.length;i++){
+			lines[i]=[];
+			var node={};
+			node.x=1*width/8+5;node.y=550-(data[i].cyl-boundsInitial[0].bottom)/(boundsInitial[0].up-boundsInitial[0].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=2*width/8+5;node.y=550-(data[i].dsp-boundsInitial[1].bottom)/(boundsInitial[1].up-boundsInitial[1].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=3*width/8+5;node.y=550-(data[i].lbs-boundsInitial[2].bottom)/(boundsInitial[2].up-boundsInitial[2].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=4*width/8+5;node.y=550-(data[i].hp-boundsInitial[3].bottom)/(boundsInitial[3].up-boundsInitial[3].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=5*width/8+5;node.y=550-(data[i].acc-boundsInitial[4].bottom)/(boundsInitial[4].up-boundsInitial[4].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=6*width/8+5;node.y=550-(data[i].mpg-boundsInitial[5].bottom)/(boundsInitial[5].up-boundsInitial[5].bottom)*500;
+		    lines[i].push(node);
+			var node={};
+			node.x=7*width/8+5;node.y=550-(data[i].year-boundsInitial[6].bottom)/(boundsInitial[6].up-boundsInitial[6].bottom)*500;
+		    lines[i].push(node);
+		}
+		initialBounds();
+		paintLines();
+		//paint the lines
+		function paintLines(){
+		    allLines.innerHTML="";
+			for(var j=0;j<columns.length;j++){
+				if(bounds[j].up!=550||bounds[j].bottom!=50){
+					var tempRect=document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+					tempRect.setAttribute('x',lines[0][j].x-5);
+					tempRect.setAttribute('y',bounds[j].bottom);
+					tempRect.setAttribute('width',10);
+					tempRect.setAttribute('height',bounds[j].up-bounds[j].bottom);
+					tempRect.setAttribute('fill',"#FFD700");
+					allLines.appendChild(tempRect);
+					
+					var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			        tempText1.setAttribute('x',lines[0][j].x-5);
+			        tempText1.setAttribute('y',bounds[j].bottom-5);
+			        tempText1.setAttribute('font-size',12);	 
+			        tempText1.innerHTML=Math.round((550-bounds[j].bottom)/500*(boundsInitial[j].up-boundsInitial[j].bottom))+boundsInitial[j].bottom;
+			        allLines.appendChild(tempText1);
+					
+					var tempText1=document.createElementNS('http://www.w3.org/2000/svg', 'text');
+			        tempText1.setAttribute('x',lines[0][j].x-5);
+			        tempText1.setAttribute('y',bounds[j].up+12);
+			        tempText1.setAttribute('font-size',12);	 
+			        tempText1.innerHTML=Math.round((550-bounds[j].up)/500*(boundsInitial[j].up-boundsInitial[j].bottom))+boundsInitial[j].bottom;
+			        allLines.appendChild(tempText1);
+					
+				}
+			}
+			for(var i=0;i<data.length;i++){
+				var a=0;
+				for(var j=0;j<lines[i].length;j++){
+					if(lines[i][j].y>bounds[j].up||lines[i][j].y<bounds[j].bottom){a=1;break;}
+				}
+				if(a==1)continue;
+				var tempLine=document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+				var tempColor="rgb("+(i*1)%256+","+(i*2)%256+","+(i*3)%256+")";
+				tempLine.setAttribute("fill","none");
+				tempLine.setAttribute("stroke", tempColor);
+				tempLine.setAttribute("stroke-width", "0.5");
+				var tempPoints="";
+				for(var j=0;j<lines[i].length;j++){
+					tempPoints+=lines[i][j].x+","+lines[i][j].y+" ";
+				}
+				tempLine.setAttribute("points", tempPoints);
+				allLines.appendChild(tempLine);
+		    }
+			svg.appendChild(allLines);
+		};
+		function initialBounds(){
+			for(var i=0;i<columns.length;i++){
+				bounds[i]={};
+				bounds[i].up=550;
+				bounds[i].bottom=50;
+			}
+		};
+		
+		
+		var moveBar={};var selectBar={};
+		
+		$("#svg").mousemove(function(e){
+			var offset=$(this).offset();//?
+			var pos={};
+			pos.x=e.pageX-offset.left;
+			pos.y=e.pageY-offset.top;
+			//console.log(pos.x,pos.y);
+			var cursorType="default";
+			for(var i=0;i<columns.length;i++){
+				if(lines[0][i].x-5<pos.x&&pos.x<lines[0][i].x+5&&pos.y<550)
+				{cursorType="move";break;}
+				else if(lines[0][i].x-20<pos.x&&pos.x<lines[0][i].x+20&&pos.y<550)
+				{cursorType="crosshair";break;}
+			}
+			svg.style.cursor=cursorType;
+			
+			for(var i=0;i<columns.length;i++)
+			    if(moveBar.yes==1&&moveBar.num==i){
+					var dy=pos.y-moveBar.y;
+					if(moveBar.boundiUp+dy>550)dy=550-moveBar.boundiUp;
+					if(moveBar.boundiBottom+dy<50)dy=50-moveBar.boundiBottom;
+					bounds[i].up=moveBar.boundiUp+dy;
+					bounds[i].bottom=moveBar.boundiBottom+dy;
+					paintLines();
+					break;
+				}
+					
+		});
+		
+		$("#svg").mousedown(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   if(pos.y<50)pos.y=50;
+		   if(pos.y>550)pos.y=550;
+		   console.log(pos.x,pos.y);
+		   for(var i=0;i<columns.length;i++){
+				if(lines[0][i].x-5<pos.x&&pos.x<lines[0][i].x+5&&pos.y>bounds[i].bottom&&pos.y<bounds[i].up
+				&&(bounds[i].bottom!=boundsInitial[i].bottom||bounds[i].up!=boundsInitial[i].up)
+				){
+					moveBar.yes=1;
+					moveBar.num=i;
+					moveBar.x=pos.x;
+					moveBar.y=pos.y;
+					moveBar.boundiUp=bounds[i].up;
+					moveBar.boundiBottom=bounds[i].bottom;
+					break;
+				}
+				else if(lines[0][i].x-20<pos.x&&pos.x<lines[0][i].x+20&&pos.y<550){
+				selectBar.yes=1;
+				selectBar.num=i;
+				selectBar.x=lines[0][i].x-5;
+				selectBar.y=pos.y;
+				break;}
+		   }
+		});
+		
+		$("#svg").mouseup(function(e){
+		   var offset=$(this).offset();
+		   var pos={};
+		   pos.x=e.pageX-offset.left;
+		   pos.y=e.pageY-offset.top;
+		   if(pos.y<50)pos.y=50;
+		   if(pos.y>550)pos.y=550;
+		   console.log("#",pos.x,pos.y);
+		   //if(moveBar.yes)
+		   if(selectBar.yes){
+				var max=selectBar.y>pos.y ? selectBar.y:pos.y;
+				var min=selectBar.y<pos.y ? selectBar.y:pos.y;
+				bounds[selectBar.num].up=max;
+				bounds[selectBar.num].bottom=min;
+				paintLines();
+			} 
+			selectBar.yes=0;
+			moveBar.yes=0;
+		});
+	}
+
+}
+
+var params={};
+params.data=cars;
+params.columns=["cylinders","displacement","weight","horsepower","acceleration","mileage","year"];
+params.svg=document.getElementById("svg");
+params.boundsInitial=[{up:9,bottom:3},{up:456,bottom:68},{up:5141,bottom:1613},{up:231,bottom:46},{up:26,bottom:8},{up:48,bottom:9},{up:83,bottom:70}];
+var parallelCoordinates=new createParallel(params);
+parallelCoordinates.run();
+</script>
+
+</body>
+</html>

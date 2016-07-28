@@ -1,0 +1,294 @@
+﻿<html>
+<head>
+<meta charset="utf-8"/>
+<title>hierarchical Edge Bundling</title>
+<body onload="intial()">
+<svg id="svg" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+</svg>
+
+<form style="position:absolute;top:50;left:50;">
+  <input type="radio"  id="annulus" checked onclick="changeType1()" >
+  <label >Annulus</label><br>
+  <input type="radio" id="planet" checked onclick="changeType2()">
+  <label >Planets</label><br>
+  <input type="radio"  id="sun" checked onclick="changeType3()">
+  <label >Sun</label>
+</form>	
+<script>
+function createGear(params){
+this.svg=params.svg;
+this.type=params.type;
+this.id="";
+}
+createGear.prototype={
+    clear:function(){
+		clearInterval(this.id);
+	},
+	run:function(){
+		var svg=this.svg;
+		var type=this.type;
+		var width=svg.getAttribute("width"),height=svg.getAttribute("height");
+		var r1=400,r2=160,r3=80;
+		
+		var teeth1=80,teeth2=32,teeth3=16;
+		var r1=400,r2=160,r3=80;
+		
+		var partS=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		var partM=[];
+		partM[0]=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		partM[1]=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		partM[2]=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		var partB=document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		
+		var t=0;var transform="";
+		svg.innerHTML="";
+		this.id=setInterval(
+		function display(){
+		    partS.innerHTML="";
+			for(var i=0;i<3;i++){
+				partM[i].innerHTML="";
+			}
+			partB.innerHTML="";
+			if(type=="planet"){
+				t++;
+				var tempx=width/2,tempy=height/2;
+				transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+4*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+				partB.setAttribute("transform",transform);
+				
+				
+				for(var i=0;i<3;i++){
+					tempx= width/2+(r2+r3)*Math.cos(Math.PI*1/6+Math.PI*2/3*i);
+					tempy=height/2+(r2+r3)*Math.sin(Math.PI*1/6+Math.PI*2/3*i);
+					transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+10*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+					partM[i].setAttribute("transform",transform);
+				
+				}
+				
+				tempx=width/2;
+				tempy=height/2;
+				transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+-20*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+				partS.setAttribute("transform",transform);
+			}
+			else if(type=="annulus"){
+				t++;
+				
+				for(var i=0;i<3;i++){
+					tempx=width/2;
+					tempy=height/2;
+					transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+0.4*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+					
+					
+					tempx= width/2+(r2+r3)*Math.cos(Math.PI*1/6+Math.PI*2/3*i);
+					tempy=height/2+(r2+r3)*Math.sin(Math.PI*1/6+Math.PI*2/3*i);
+					transform+='translate(' + tempx + ',' + tempy + ')'+'rotate('+-1*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+					partM[i].setAttribute("transform",transform);
+				
+				}
+				
+				tempx=width/2;
+				tempy=height/2;
+				transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+2.4*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+				partS.setAttribute("transform",transform);
+			}
+			else if(type=="sun"){
+				t++;
+				var tempx=width/2,tempy=height/2;
+				transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+ -4*t +')'+'translate(' + -tempx + ',' + -tempy + ')';
+				partB.setAttribute("transform",transform);
+				
+				for(var i=0;i<3;i++){
+					tempx=width/2;
+					tempy=height/2;
+					transform='translate(' + tempx + ',' + tempy + ')'+'rotate('+-10/3*t+')'+'translate(' + -tempx + ',' + -tempy + ')';//角度
+					
+					
+					tempx= width/2+(r2+r3)*Math.cos(Math.PI*1/6+Math.PI*2/3*i);
+					tempy=height/2+(r2+r3)*Math.sin(Math.PI*1/6+Math.PI*2/3*i);
+					transform+='translate(' + tempx + ',' + tempy + ')'+'rotate('+-5/3*t+')'+'translate(' + -tempx + ',' + -tempy + ')';
+					partM[i].setAttribute("transform",transform);
+				
+				}
+			}
+		    
+		    //Big
+		    var tempCircle=document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+			tempCircle.setAttribute('cx',width/2);
+			tempCircle.setAttribute('cy',height/2);
+			tempCircle.setAttribute('r',416);
+			tempCircle.setAttribute("stroke", "rgb(0,0,0)");
+			tempCircle.setAttribute("stroke-width", "1");
+            tempCircle.setAttribute("fill", "#33a3dc"); 			
+			partB.appendChild(tempCircle);
+		
+		    var teethPath=" M ";
+			var cx,cy,x,y;
+			var theda=0;
+			var dtheda=2*Math.PI/(teeth1*2);
+			cx=width/2;cy=height/2;
+			x=width/2+r1+8;y=height/2;
+			teethPath+=x+" "+y;
+			for(var j=1;j<=teeth1;j++){
+			    theda=theda+dtheda;
+			    x=cx+(r1+8)*Math.cos(theda);
+				y=cy+(r1+8)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				//middle 4 points
+				x=cx+(r1)*Math.cos(theda);
+				y=cy+(r1)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				
+				x=cx+(r1-8)*Math.cos(theda+dtheda/4);
+				y=cy+(r1-8)*Math.sin(theda+dtheda/4);
+				teethPath+=" L "+x+" "+y;
+				
+				x=cx+(r1-8)*Math.cos(theda+dtheda*3/4);
+				y=cy+(r1-8)*Math.sin(theda+dtheda*3/4);
+				teethPath+=" L "+x+" "+y;
+				
+				theda=theda+dtheda;
+			    x=cx+(r1)*Math.cos(theda);
+				y=cy+(r1)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				//
+				x=cx+(r1+8)*Math.cos(theda);
+				y=cy+(r1+8)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				
+			}
+		    teethPath+=" Z ";
+			var teeth=document.createElementNS('http://www.w3.org/2000/svg', 'path');
+			teeth.setAttribute("d", teethPath);
+		    teeth.setAttribute("stroke", "black");
+		    teeth.setAttribute("fill", "white");
+			partB.appendChild(teeth);
+			//Middle
+			for(var i=0;i<3;i++){
+			
+				var teethPath=" M ";
+				var cx,cy,x,y;
+				var theda=0;
+				var dtheda=2*Math.PI/(teeth2*2);
+				cx=width/2+(r2+r3)*Math.cos(Math.PI*1/6+Math.PI*2/3*i);
+				cy=height/2+(r2+r3)*Math.sin(Math.PI*1/6+Math.PI*2/3*i);
+				x=cx+r2;y=cy;
+				teethPath+=x+" "+y;
+				for(var j=1;j<=teeth2;j++){
+					x=cx+(r2+8)*Math.cos(theda+dtheda/4);
+					y=cy+(r2+8)*Math.sin(theda+dtheda/4);
+					teethPath+=" L "+x+" "+y;
+					
+					x=cx+(r2+8)*Math.cos(theda+dtheda*3/4);
+					y=cy+(r2+8)*Math.sin(theda+dtheda*3/4);
+					
+					teethPath+=" L "+x+" "+y;
+					theda=theda+dtheda;
+					x=cx+(r2)*Math.cos(theda);
+					y=cy+(r2)*Math.sin(theda);
+					teethPath+=" L "+x+" "+y;
+				
+					x=cx+(r2-8)*Math.cos(theda);
+					y=cy+(r2-8)*Math.sin(theda);
+					teethPath+=" L "+x+" "+y;
+					
+					theda=theda+dtheda;
+					x=cx+(r2-8)*Math.cos(theda);
+					y=cy+(r2-8)*Math.sin(theda);
+					teethPath+=" L "+x+" "+y;
+					//
+					x=cx+(r2)*Math.cos(theda);
+					y=cy+(r2)*Math.sin(theda);
+					teethPath+=" L "+x+" "+y;
+				}
+				teethPath+=" Z ";
+				var teeth=document.createElementNS('http://www.w3.org/2000/svg', 'path');
+				teeth.setAttribute("d", teethPath);
+				teeth.setAttribute("stroke", "black");
+				teeth.setAttribute("fill", "#33a3dc");
+				partM[i].appendChild(teeth);
+			}
+			
+			//Small
+			var teethPath=" M ";
+			var cx,cy,x,y;
+			var theda=0;
+			var dtheda=2*Math.PI/(teeth3*2);
+			cx=width/2;cy=height/2;
+			x=cx+r3;y=cy;
+			teethPath+=x+" "+y;
+			for(var j=1;j<=teeth3;j++){
+				x=cx+(r3+8)*Math.cos(theda+dtheda/4);
+				y=cy+(r3+8)*Math.sin(theda+dtheda/4);
+				teethPath+=" L "+x+" "+y;
+				
+				x=cx+(r3+8)*Math.cos(theda+dtheda*3/4);
+				y=cy+(r3+8)*Math.sin(theda+dtheda*3/4);
+				
+				teethPath+=" L "+x+" "+y;
+			    theda=theda+dtheda;
+			    x=cx+(r3)*Math.cos(theda);
+				y=cy+(r3)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+			
+				x=cx+(r3-8)*Math.cos(theda);
+				y=cy+(r3-8)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				
+				theda=theda+dtheda;
+			    x=cx+(r3-8)*Math.cos(theda);
+				y=cy+(r3-8)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+				//
+				x=cx+(r3)*Math.cos(theda);
+				y=cy+(r3)*Math.sin(theda);
+				teethPath+=" L "+x+" "+y;
+			}
+		    teethPath+=" Z ";
+			var teeth=document.createElementNS('http://www.w3.org/2000/svg', 'path');
+			teeth.setAttribute("d", teethPath);
+		    teeth.setAttribute("stroke", "black");
+		    teeth.setAttribute("fill", "#33a3dc");
+			partS.appendChild(teeth);
+			
+			svg.appendChild(partB);
+			svg.appendChild(partM[0]);svg.appendChild(partM[1]);svg.appendChild(partM[2]);
+			svg.appendChild(partS);
+		}
+	,15);
+		
+		
+		
+	
+		
+	}
+
+}
+
+var params={};
+params.svg=document.getElementById("svg");
+params.type="annulus";
+function changeType1(){
+		document.getElementById("planet").checked=0;
+		document.getElementById("sun").checked=0;
+		params.type="annulus";Gear.clear();Gear=new createGear(params);Gear.run();
+	}
+function changeType2(){
+	document.getElementById("annulus").checked=0;
+	document.getElementById("sun").checked=0;
+	params.type="planet";Gear.clear();Gear=new createGear(params);Gear.run();
+}
+function changeType3(){
+	document.getElementById("annulus").checked=0;
+	document.getElementById("planet").checked=0;
+	params.type="sun";Gear.clear();Gear=new createGear(params);Gear.run();
+}
+function intial(){
+        document.getElementById("annulus").checked=1;
+        document.getElementById("planet").checked=0;
+		document.getElementById("sun").checked=0;
+}
+var Gear=new createGear(params);
+Gear.run();
+
+</script>
+</body>
+</html>

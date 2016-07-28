@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>wordCloud</title>
+</head>
+
+<body>
+<canvas id="canvas" height="300" width="300"></canvas>
+
+<script>
+function createWordCloud(flow)
+{
+  this.words=flow.words;
+  this.font=flow.font;
+  this.canvas=flow.canvas;
+  this.colorSet=flow.colorSet;
+  this.colorBack=flow.colorBack;
+}
+createWordCloud.prototype=
+{
+      run:  function()
+	  {
+	     var words=this.words;
+		 var canvas=this.canvas;
+		 var ctx=canvas.getContext("2d");
+		 
+		 var maxWidth=0;
+		 for(var i=0;i<words.length;i++)
+		 {
+		    words[i].fontSize=2*words[i].freq;
+			ctx.font=words[i].fontSize+"px "+font;
+			words[i].width=ctx.measureText(words[i].text).width;
+			words[i].area=words[i].fontSize*words[i].width;
+			words[i].direction=1/2*Math.PI*Math.random();
+			words[i].color=this.colorSet[Math.floor( Math.random() * this.colorSet.length )];
+			if(words[i].width>maxWidth)maxWidth=words[i].width;
+		 }
+		 words.sort(function(a,b){return b.area-a.area;});
+		 var top = 0;
+		 var bottom = 0;
+		 var left = 0;
+		 var right = 0;
+		 var bound = 0;
+		 for(var i=0;i<words.length;i++)
+		 {
+		    var region={};
+			region.x=canvas.width*(0.1+0.8*Math.random());
+			region.y=canvas.height*(0.1+0.8*Math.random());
+			region.w=words[i].width;
+			region.h=words[i].fontSize;
+			region.direction=words[i].direction;
+			var point=
+			{
+			  x:0,
+			  y:0
+			};
+			var point1 =Object.create(point);var point2 =Object.create(point);
+			var point3 =Object.create(point);var point4 =Object.create(point);
+			point1.x=region.x;point1.y=region.y;
+			point2.x=point1.x+region.h*Math.sin(region.direction);point2.y=point1.y+region.h*Math.cos(region.direction);
+			point3.x=point1.x+region.w*Math.cos(region.direction);point3.y=point1.y-region.w*Math.sin(region.direction);
+			point4.x=point3.x+region.h*Math.sin(region.direction);point4.y=point3.y+region.h*Math.cos(region.direction);
+			var left=point1.x; if(point2.x<left)left=point2.x; if(point3.x<left)left=point3.x;if(point4.x<left)left=point4.x;
+			var right=point1.x;if(point2.x>right)right=point2.x;if(point3.x>right)right=point3.x;if(point4.x>right)right=point4.x;
+			var top=point1.y;if(point2.y<top)top=point2.y;if(point3.y<top)top=point3.y;if(point4.y<top)top=point4.y;
+			var bottom=point1.y;if(point2.y>bottom)bottom=point2.y;if(point3.y>bottom)bottom=point3.y;if(point4.y>bottom)bottom=point4.y;
+			
+			region.recw=right-left;
+			region.rech=bottom-top;
+			region.gx=(point1.x+point4.x)/2;region.gy=(point1.y+point4.y)/2;
+			
+			
+			
+			var t=0,r=0,x=0,y=0;var num=0;var move=0;
+		    for(var j=0;j<i;j++){
+			if(move==1){j=0;move=0;}
+			   var region1=words[j].region;  
+			   var region2=region;
+			   var dgx=Math.abs(region1.gx-(region2.gx+x)),dgy=Math.abs(region1.gy-(region2.gy+y));
+			  
+		    var point5 =Object.create(point);var point6 =Object.create(point);
+			var point7 =Object.create(point);var point8 =Object.create(point);
+			point5.x=region1.x;point5.y=region1.y;
+			point6.x=point5.x+region1.h*Math.sin(region1.direction);point6.y=point5.y+region1.h*Math.cos(region1.direction);
+			point7.x=point5.x+region1.w*Math.cos(region1.direction);point7.y=point5.y-region1.w*Math.sin(region1.direction);
+			point8.x=point7.x+region1.h*Math.sin(region1.direction);point8.y=point7.y+region1.h*Math.cos(region1.direction);
+			   
+			    /*ctx.beginPath();
+			    ctx.moveTo(point1.x+x,point1.y+y);
+			    ctx.lineTo(point2.x+x,point2.y+y);
+			    ctx.lineTo(point4.x+x,point4.y+y);
+			    ctx.lineTo(point3.x+x,point3.y+y);
+			    ctx.lineTo(point1.x+x,point1.y+y);
+				ctx.arc(region.gx+x,region.gy+y,5,0,2*Math.PI,false);
+			    ctx.moveTo(point5.x,point5.y);
+			    ctx.lineTo(point6.x,point6.y);
+			    ctx.lineTo(point8.x,point8.y);
+			    ctx.lineTo(point7.x,point7.y);
+			    ctx.lineTo(point5.x,point5.y);
+				ctx.arc(region1.gx,region1.gy,5,0,2*Math.PI,false);
+			    ctx.stroke();
+			    ctx.closePath();
+			    ctx.fillStyle="#ffffff";
+                ctx.fillRect(0,0,300,300);*/
+			   while
+			   (
+			    (num<500)&&(dgx<(region1.recw+region.recw)/2)&&(dgy<(region1.rech+region.rech)/2)
+			   )
+			   {
+			       if(j!=0){move=1;j=0;}
+			       num++;
+			       t += Math.PI / 360 * 10;
+				   r = 4 * t;
+				   x =  r * Math.cos( t ) ;
+				   y =  r * Math.sin( t ) ;
+				   dgx=Math.abs(region1.gx-(region2.gx+x)),dgy=Math.abs(region1.gy-(region2.gy+y));
+				   
+			   }
+				/*ctx.beginPath();
+			    ctx.moveTo(point1.x+x,point1.y+y);
+			    ctx.lineTo(point2.x+x,point2.y+y);
+			    ctx.lineTo(point4.x+x,point4.y+y);
+			    ctx.lineTo(point3.x+x,point3.y+y);
+			    ctx.lineTo(point1.x+x,point1.y+y);
+				ctx.arc(region.gx+x,region.gy+y,5,0,2*Math.PI,false);
+			    ctx.moveTo(point5.x,point5.y);
+			    ctx.lineTo(point6.x,point6.y);
+			    ctx.lineTo(point8.x,point8.y);
+			    ctx.lineTo(point7.x,point7.y);
+			    ctx.lineTo(point5.x,point5.y);
+				ctx.arc(region1.gx,region1.gy,5,0,2*Math.PI,false);
+			    ctx.stroke();
+			    ctx.closePath();*/
+			    //ctx.fillStyle="#ffffff";
+                //ctx.fillRect(0,0,300,300);
+			}
+			region.x+=x;region.y+=y;region.gx+=x;region.gy+=y;words[i].region=region;
+			
+			if(canvas.width/2-region.x>left)
+			 left=canvas.width/2-region.x;
+			if(region.x-canvas.width/2>right)
+			 right=region.x-canvas.width/2;
+			if(canvas.height/2-region.y>top)
+			 top=canvas.height/2-region.y;
+			if(region.y-canvas.height/2>bottom)
+			 bottom=region.y-canvas.height/2;
+			 
+			if(left>bound)bound=left;
+			if(bottom>bound)bound=bottom;
+			if(right>bound)bound=right;
+			if(top>bound)bound=top;
+		 }
+		 
+		 maxWidth*=1.2;
+		 var ratiox=canvas.width/2/(bound+maxWidth);
+		 var ratioy=canvas.height/2/(bound+maxWidth);
+		 ctx.scale(ratiox,ratioy);
+		 ctx.translate(-(canvas.width/2-bound-maxWidth),-(canvas.height/2-bound-maxWidth));
+		 
+		 
+		 for(var i=0;i<words.length;i++){
+		    if(words[i].direction>0)
+			{
+			   ctx.save();
+			   ctx.translate(words[i].region.x,words[i].region.y);
+			   ctx.rotate(-words[i].direction);
+			   ctx.translate(-words[i].region.x,-words[i].region.y);
+			}
+		    ctx.fillStyle=words[i].color;
+			ctx.font = words[i].fontSize + "px " + this.font;
+			var wid=ctx.measureText(words[i].text).width
+			ctx.fillText(words[i].text,words[i].region.x,words[i].region.y+region.h);
+			if(words[i].direction>0)
+			  ctx.restore();
+		 }
+	  }
+}
+
+
+//data
+var wordSet=["word","list","lamp","bottle","mouse","def"];
+var font="impact";
+var canvas=document.getElementById("canvas");
+//calculate input parameter
+var words=[];
+for(var i=0;i<wordSet.length;i++)
+{
+    var word={};
+	word.text=wordSet[i];
+	word.freq=25+Math.round(Math.random()*10);
+	words.push(word);
+}
+var flow={};
+flow.words=words;
+flow.font=font;
+flow.canvas=canvas;
+flow.colorSet=["#f7acbc", "#f47920", "#2a5caa", "#1b315e", "#840228", "#ef4136", "#1d953f", "#33a3dc"];
+flow.colorBack="#000000";
+var wordCloud=new createWordCloud(flow);
+wordCloud.run(); 
+</script>
+</body>
+
+</html>

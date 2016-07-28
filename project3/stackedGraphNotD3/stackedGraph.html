@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset = "utf-8" />
+<title>stack graph</title>
+
+</head>
+<body>
+<canvas id="canvas" height="500" width="1000"></canvas>
+<script>
+function createStreamGraph(flow)
+{
+this.layers=flow.layers;
+this.layersNum=flow.layersNum;
+this.numPerLayer=flow.numPerLayer;
+this.canvas=flow.canvas;
+this.colorRange=flow.colorRange;
+}
+createStreamGraph.prototype=
+{
+ 
+     run: function()
+	 {
+	  var layersNum=this.layersNum;
+	  var numPerLayer=this.numPerLayer;
+	  var canvas = this.canvas;
+	  var ctx = canvas.getContext('2d');
+	  var layers = this.layers;
+	  f=[];g=[];
+	  weight=[];
+	  sequence=[];
+	  baseline=[];
+	  //calculate weight of each layer
+	  for(var i=0;i<layersNum;i++){
+	     weight[i]=0;
+	     for(var j=0;j<numPerLayer;j++)
+		    weight[i]+=layers[i][j].y;
+	  }
+	  //because all layers' onset time is the same, so sorting by onset time isn't needed
+	  //layers.sort( function(a, b){ return a[0].weight < b[0].weight ? 1 : -1 } );
+	  //following is sorted by the weight
+	  var downIndex=layersNum-1;var upIndex=layersNum;
+	  var downWeight=0;var upWeight=0;
+	  for(var i=0; i<layersNum;i++)
+	  {
+	    if(upWeight<downWeight){
+		upWeight+=weight[i];
+		sequence[downIndex]=i;
+		downIndex--;
+		}
+		else{
+		downWeight+=weight[i];
+		sequence[upIndex]=i;
+		upIndex++;
+		}
+	  }
+	  var temp=[];
+	  for(var i=0; i<layersNum;i++){
+	     temp[i]=[];
+	     for(var j=0;j<numPerLayer;j++)
+	       temp[i][j]=layers[sequence[downIndex+1+i]][j].y;
+	  }
+	  for(var i=0; i<layersNum;i++)
+	     for(var j=0;j<numPerLayer;j++)
+	       layers[i][j].y=temp[i][j];   
+		   
+	  
+	  //calculate f
+	  for(var i=0;i<layersNum;i++){
+	     f[i]=[];
+	     for(var j=0;j<numPerLayer;j++)
+		    f[i][j]=layers[i][j].y;
+	  }
+	  
+	  
+	  
+	  
+	  //calculate baseline, then add it
+	       //0
+	  baseline[0]={};
+	  baseline[0].x=0;
+	  
+	  baseline[0].y=0;
+	  for(var i=0;i<layersNum;i++)
+	  baseline[0].y+=(layersNum-(i+1)+1)*f[i][0];
+	  baseline[0].y/=-(layersNum+1);
+	  
+	  var temSum=0;
+	  baseline[0].dif=0;
+	  for(var i=0;i<layersNum;i++){
+	      var temp1=0;temSum+=f[i][0];
+	      for(var j=0;j<i-1;j++)
+		     temp1+=f[j][1]-f[j][0];
+	      baseline[0].dif+=(1/2*(f[i][1]-f[i][0])+temp1)*f[i][0];
+	  }
+	  baseline[0].dif/=-temSum;
+	       //1 to numPerLayer-2
+	  for(var k=1;k<numPerLayer-1;k++)
+	  {
+	    baseline[k]={};
+	    baseline[k].y=baseline[k-1].y+baseline[k-1].dif;
+		
+		var temSum=0;
+		baseline[k].dif=0;
+	    for(var i=0;i<layersNum;i++){
+	      var temp1=0;temSum+=f[i][k];
+	      for(var j=0;j<i-1;j++)
+		     temp1+=(f[j][k+1]-f[j][k]);
+	      baseline[k].dif+=(1/2*(f[i][k+1]-f[i][k])+temp1)*f[i][k];
+		  
+	    }
+	    baseline[k].dif/=-temSum;
+		baseline[k].x=k;
+	  }
+	       //numPerLayer-1
+	  baseline[numPerLayer-1]={};
+	  baseline[numPerLayer-1].x=numPerLayer-1;
+	  baseline[numPerLayer-1].y=baseline[numPerLayer-2].y+baseline[numPerLayer-2].dif;
+	       //add baseline 
+	  layers[layersNum] = baseline;
+	  for(var i=layersNum;i>=0;i--)
+	  {
+	    layers[i+1]=layers[i];
+	  }
+	  layers[0]=layers[layersNum+1];
+	  
+	  
+	  
+	  
+	  //recalculate f
+	  for(var i=0;i<layersNum+1;i++){
+	     f[i]=[];
+	     for(var j=0;j<numPerLayer;j++)
+		    f[i][j]=layers[i][j].y;
+	  }
+	  //calculate g
+	  for(var i=0;i<layersNum+1;i++){
+	     g[i]=[];
+	     for(var j=0;j<numPerLayer;j++){
+		       g[i][j]=0;
+		     for(var k=0;k<=i;k++)
+		       g[i][j]+=layers[k][j].y;
+		 }
+	  }
+	  //adjust the coordinate x and y
+	  var ratiox=canvas.width/(numPerLayer-1);
+	  var yMax = 0;
+		for( var i = 0; i < numPerLayer+1; i++ )
+			if( yMax < g[layersNum][i] )
+				yMax = g[layersNum][i];
+	  var yMin = 0;
+		for( var i = 0; i < numPerLayer+1; i++ )
+			if( yMin > g[0][i] )
+				yMin = g[0][i];		
+		var valueMax = ( yMax > -yMin ) ? yMax : -yMin;
+	  var ratioy = (canvas.height/ 2) /valueMax ;
+	  
+	  for(var i=0;i<layersNum+1;i++){
+	     for(var j=0;j<numPerLayer;j++){
+	      layers[i][j].x*=ratiox;
+		  layers[i][j].y=canvas.height / 2 + ratioy * g[i][j];
+	     }
+	  }
+	  for( var i = layersNum; i >= 0; i-- )
+		{
+			ctx.beginPath();
+			ctx.moveTo(layers[i][0].x, layers[i][0].y);
+			for( var j = 1; j < numPerLayer; j++ )
+				ctx.lineTo(layers[i][j].x, layers[i][j].y);
+			ctx.lineTo(canvas.width, 0);
+			ctx.lineTo(0, 0);
+			
+			if( i != 0 )
+				ctx.fillStyle = this.colorRange[ i % this.colorRange.length];
+			else
+				ctx.fillStyle = "#ffffff";
+			ctx.closePath();
+			ctx.fill();
+		}
+		ctx.beginPath();
+		ctx.fillStyle="#000000";
+		ctx.fillRect(0,canvas.height/2-3,canvas.width,6);	ctx.closePath();
+		
+		
+    }
+}
+var flow = 
+{
+//canvas: document.getElementById("canvas"),
+//colorRange: ["#50b7c1", "#78cdd1", "#008792", "#94d6da"],
+//layers: [],
+//layersNum: 20,
+//numPerLayer: 200
+};
+flow.canvas = document.getElementById("canvas");
+flow.colorRange = ["#50b7c1", "#78cdd1", "#008792", "#94d6da"];
+flow.layers = [];
+flow.layersNum = 20; // number of layers
+flow.numPerLayer = 200; // number of samples per layer
+for( var i = 0; i < flow.layersNum; i++ )
+{
+	var perLayer = bumpLayer(flow.numPerLayer);
+	flow.layers.push(perLayer);
+}
+var streamGraph = new createStreamGraph(flow);
+streamGraph.run();
+// test data generator
+function bumpLayer(n) {
+
+  function bump(a) {
+    var x = 1 / (.1 + Math.random()),
+        y = 2 * Math.random() - .5,
+        z = 10 / (.1 + Math.random());
+    for (var i = 0; i < n; i++) {
+      var w = (i / n - y) * z;
+      a[i] += x * Math.exp(-w * w);
+    }
+  }
+
+  var a = [], i;
+  for (i = 0; i < n; ++i) a[i] = 0;
+  for (i = 0; i < 5; ++i) bump(a);
+  var result=a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
+  return a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
+}
+
+
+
+</script>
+</body>
+</html>
